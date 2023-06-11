@@ -52,10 +52,6 @@ func main() {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		exampleInformerFactory.Customhpa().V1alpha1().CustomHPAs())
 
-	// controller := NewController(ctx, kubeClient, exampleClient,
-	// 	kubeInformerFactory.Apps().V1().Deployments(),
-	// 	exampleInformerFactory.Samplecontroller().V1alpha1().Foos())
-
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(ctx.done())
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
 	kubeInformerFactory.Start(ctx.Done())
@@ -71,21 +67,3 @@ func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 }
-
-// func main() {
-// 	config, err := rest.InClusterConfig()
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	clientset, err := kubernetes.NewForConfig(config)
-// 	if err != nil {
-// 		panic(err.Error())
-// 	}
-// 	// pods, err := clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
-// 	// if err != nil {
-// 	// 	panic(err.Error())
-// 	// }
-// 	// for _, pod := range pods.Items {
-// 	// 	fmt.Printf("%s\n", pod.GetName())
-// 	// }
-// }

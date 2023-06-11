@@ -21,9 +21,9 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	samplev1alpha1 "custom-hpa/pkg/apis/customhpa/v1alpha1"
+	customhpav1alpha1 "custom-hpa/pkg/apis/customhpa/v1alpha1"
 	clientset "custom-hpa/pkg/generated/clientset/versioned"
-	samplescheme "custom-hpa/pkg/generated/clientset/versioned/scheme"
+	customhpascheme "custom-hpa/pkg/generated/clientset/versioned/scheme"
 	informers "custom-hpa/pkg/generated/informers/externalversions/customhpa/v1alpha1"
 
 	listers "custom-hpa/pkg/generated/listers/customhpa/v1alpha1"
@@ -32,31 +32,31 @@ import (
 const controllerAgentName = "custom-hpa-controller"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
+	// SuccessSynced is used as part of the Event 'reason' when a CustomHPA is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a Foo fails
+	// ErrResourceExists is used as part of the Event 'reason' when a CustomHPA fails
 	// to sync due to a Deployment of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 
 	// MessageResourceExists is the message used for Events when a resource
 	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Foo"
-	// MessageResourceSynced is the message used for an Event fired when a Foo
+	MessageResourceExists = "Resource %q already exists and is not managed by CustomHPA"
+	// MessageResourceSynced is the message used for an Event fired when a CustomHPA
 	// is synced successfully
-	MessageResourceSynced = "Foo synced successfully"
+	MessageResourceSynced = "CustomHPA synced successfully"
 )
 
-// Controller is the controller implementation for Foo resources
+// Controller is the controller implementation for CustomHPA resources
 type Controller struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
-	// sampleclientset is a clientset for our own API group
-	sampleclientset clientset.Interface
+	// customhpaclientset is a clientset for our own API group
+	customhpaclientset clientset.Interface
 
 	deploymentsLister appslisters.DeploymentLister
 	deploymentsSynced cache.InformerSynced
-	foosLister        listers.CustomHPALister
-	foosSynced        cache.InformerSynced
+	customhpasLister  listers.CustomHPALister
+	customhpasSynced  cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -69,19 +69,19 @@ type Controller struct {
 	recorder record.EventRecorder
 }
 
-// NewController returns a new sample controller
+// NewController returns a new customhpa controller
 func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
-	sampleclientset clientset.Interface,
+	customhpaclientset clientset.Interface,
 	deploymentInformer appsinformers.DeploymentInformer,
-	fooInformer informers.CustomHPAInformer) *Controller {
+	customhpaInformer informers.CustomHPAInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
 	// Create event broadcaster
-	// Add sample-controller types to the default Kubernetes Scheme so Events can be
-	// logged for sample-controller types.
-	utilruntime.Must(samplescheme.AddToScheme(scheme.Scheme))
+	// Add customhpa-controller types to the default Kubernetes Scheme so Events can be
+	// logged for customhpa-controller types.
+	utilruntime.Must(customhpascheme.AddToScheme(scheme.Scheme))
 	logger.V(4).Info("Creating event broadcaster")
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -90,19 +90,19 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeclientset:     kubeclientset,
-		sampleclientset:   sampleclientset,
-		deploymentsLister: deploymentInformer.Lister(),
-		deploymentsSynced: deploymentInformer.Informer().HasSynced,
-		foosLister:        fooInformer.Lister(),
-		foosSynced:        fooInformer.Informer().HasSynced,
-		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
-		recorder:          recorder,
+		kubeclientset:      kubeclientset,
+		customhpaclientset: customhpaclientset,
+		deploymentsLister:  deploymentInformer.Lister(),
+		deploymentsSynced:  deploymentInformer.Informer().HasSynced,
+		customhpasLister:   customhpaInformer.Lister(),
+		customhpasSynced:   customhpaInformer.Informer().HasSynced,
+		workqueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
+		recorder:           recorder,
 	}
 
 	logger.Info("Setting up event handlers")
-	// Set up an event handler for when Foo resources change
-	fooInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	// Set up an event handler for when CustomHPA resources change
+	customhpaInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueFoo,
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueFoo(new)
@@ -110,7 +110,7 @@ func NewController(
 	})
 	// Set up an event handler for when Deployment resources change. This
 	// handler will lookup the owner of the given Deployment, and if it is
-	// owned by a Foo resource then the handler will enqueue that Foo resource for
+	// owned by a CustomHPA resource then the handler will enqueue that CustomHPA resource for
 	// processing. This way, we don't need to implement custom logic for
 	// handling Deployment resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
@@ -142,17 +142,17 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 	logger := klog.FromContext(ctx)
 
 	// Start the informer factories to begin populating the informer caches
-	logger.Info("Starting Foo controller")
+	logger.Info("Starting CustomHPA controller")
 
 	// Wait for the caches to be synced before starting workers
 	logger.Info("Waiting for informer caches to sync")
 
-	if ok := cache.WaitForCacheSync(ctx.Done(), c.deploymentsSynced, c.foosSynced); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), c.deploymentsSynced, c.customhpasSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
 	logger.Info("Starting workers", "count", workers)
-	// Launch two workers to process Foo resources
+	// Launch two workers to process CustomHPA resources
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(ctx, c.runWorker, time.Second)
 	}
@@ -207,7 +207,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 			return nil
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
-		// Foo resource to be synced.
+		// CustomHPA resource to be synced.
 		if err := c.syncHandler(ctx, key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
@@ -229,7 +229,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the Foo resource
+// converge the two. It then updates the Status block of the CustomHPA resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
@@ -241,20 +241,20 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return nil
 	}
 
-	// Get the Foo resource with this namespace/name
-	foo, err := c.foosLister.CustomHPAs(namespace).Get(name)
+	// Get the CustomHPA resource with this namespace/name
+	customhpa, err := c.customhpasLister.CustomHPAs(namespace).Get(name)
 	if err != nil {
-		// The Foo resource may no longer exist, in which case we stop
+		// The CustomHPA resource may no longer exist, in which case we stop
 		// processing.
 		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("foo '%s' in work queue no longer exists", key))
+			utilruntime.HandleError(fmt.Errorf("customhpa '%s' in work queue no longer exists", key))
 			return nil
 		}
 
 		return err
 	}
 
-	deploymentName := foo.Spec.DeploymentName
+	deploymentName := customhpa.Spec.DeploymentName
 	if deploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
@@ -263,11 +263,11 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return nil
 	}
 
-	// Get the deployment with the name specified in Foo.spec
-	deployment, err := c.deploymentsLister.Deployments(foo.Namespace).Get(deploymentName)
+	// Get the deployment with the name specified in CustomHPA.spec
+	deployment, err := c.deploymentsLister.Deployments(customhpa.Namespace).Get(deploymentName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Create(context.TODO(), newDeployment(foo), metav1.CreateOptions{})
+		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Create(context.TODO(), newDeployment(customhpa), metav1.CreateOptions{})
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -277,20 +277,20 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	// If the Deployment is not controlled by this Foo resource, we should log
+	// If the Deployment is not controlled by this CustomHPA resource, we should log
 	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, foo) {
+	if !metav1.IsControlledBy(deployment, customhpa) {
 		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(foo, corev1.EventTypeWarning, ErrResourceExists, msg)
+		c.recorder.Event(customhpa, corev1.EventTypeWarning, ErrResourceExists, msg)
 		return fmt.Errorf("%s", msg)
 	}
 
-	// If this number of the replicas on the Foo resource is specified, and the
+	// If this number of the replicas on the CustomHPA resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
-	if foo.Spec.Replicas != nil && *foo.Spec.Replicas != *deployment.Spec.Replicas {
-		logger.V(4).Info("Update deployment resource", "currentReplicas", *foo.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
-		deployment, err = c.kubeclientset.AppsV1().Deployments(foo.Namespace).Update(context.TODO(), newDeployment(foo), metav1.UpdateOptions{})
+	if customhpa.Spec.Replicas != nil && *customhpa.Spec.Replicas != *deployment.Spec.Replicas {
+		logger.V(4).Info("Update deployment resource", "currentReplicas", *customhpa.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
+		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Update(context.TODO(), newDeployment(customhpa), metav1.UpdateOptions{})
 	}
 
 	// If an error occurs during Update, we'll requeue the item so we can
@@ -300,34 +300,34 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	// Finally, we update the status block of the Foo resource to reflect the
+	// Finally, we update the status block of the CustomHPA resource to reflect the
 	// current state of the world
-	err = c.updateFooStatus(foo, deployment)
+	err = c.updateFooStatus(customhpa, deployment)
 	if err != nil {
 		return err
 	}
 
-	c.recorder.Event(foo, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	c.recorder.Event(customhpa, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
-func (c *Controller) updateFooStatus(foo *samplev1alpha1.CustomHPA, deployment *appsv1.Deployment) error {
+func (c *Controller) updateFooStatus(customhpa *customhpav1alpha1.CustomHPA, deployment *appsv1.Deployment) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
-	fooCopy := foo.DeepCopy()
-	fooCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+	customhpaCopy := customhpa.DeepCopy()
+	customhpaCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
 	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the Foo resource.
+	// we must use Update instead of UpdateStatus to update the Status block of the CustomHPA resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.sampleclientset.CustomhpaV1alpha1().CustomHPAs(foo.Namespace).UpdateStatus(context.TODO(), fooCopy, metav1.UpdateOptions{})
+	_, err := c.customhpaclientset.CustomhpaV1alpha1().CustomHPAs(customhpa.Namespace).UpdateStatus(context.TODO(), customhpaCopy, metav1.UpdateOptions{})
 	return err
 }
 
-// enqueueFoo takes a Foo resource and converts it into a namespace/name
+// enqueueFoo takes a CustomHPA resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than Foo.
+// passed resources of any type other than CustomHPA.
 func (c *Controller) enqueueFoo(obj interface{}) {
 	var key string
 	var err error
@@ -339,9 +339,9 @@ func (c *Controller) enqueueFoo(obj interface{}) {
 }
 
 // handleObject will take any resource implementing metav1.Object and attempt
-// to find the Foo resource that 'owns' it. It does this by looking at the
+// to find the CustomHPA resource that 'owns' it. It does this by looking at the
 // objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that Foo resource to be processed. If the object does not
+// It then enqueues that CustomHPA resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped.
 func (c *Controller) handleObject(obj interface{}) {
 	var object metav1.Object
@@ -362,41 +362,41 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 	logger.V(4).Info("Processing object", "object", klog.KObj(object))
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a Foo, we should not do anything more
+		// If this object is not owned by a CustomHPA, we should not do anything more
 		// with it.
-		if ownerRef.Kind != "Foo" {
+		if ownerRef.Kind != "CustomHPA" {
 			return
 		}
 
-		foo, err := c.foosLister.CustomHPAs(object.GetNamespace()).Get(ownerRef.Name)
+		customhpa, err := c.customhpasLister.CustomHPAs(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
-			logger.V(4).Info("Ignore orphaned object", "object", klog.KObj(object), "foo", ownerRef.Name)
+			logger.V(4).Info("Ignore orphaned object", "object", klog.KObj(object), "customhpa", ownerRef.Name)
 			return
 		}
 
-		c.enqueueFoo(foo)
+		c.enqueueFoo(customhpa)
 		return
 	}
 }
 
-// newDeployment creates a new Deployment for a Foo resource. It also sets
+// newDeployment creates a new Deployment for a CustomHPA resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
-// the Foo resource that 'owns' it.
-func newDeployment(foo *samplev1alpha1.CustomHPA) *appsv1.Deployment {
+// the CustomHPA resource that 'owns' it.
+func newDeployment(customhpa *customhpav1alpha1.CustomHPA) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":        "nginx",
-		"controller": foo.Name,
+		"controller": customhpa.Name,
 	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      foo.Spec.DeploymentName,
-			Namespace: foo.Namespace,
+			Name:      customhpa.Spec.DeploymentName,
+			Namespace: customhpa.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, samplev1alpha1.SchemeGroupVersion.WithKind("Foo")),
+				*metav1.NewControllerRef(customhpa, customhpav1alpha1.SchemeGroupVersion.WithKind("CustomHPA")),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: foo.Spec.Replicas,
+			Replicas: customhpa.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
