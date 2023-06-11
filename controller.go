@@ -96,16 +96,16 @@ func NewController(
 		deploymentsSynced:  deploymentInformer.Informer().HasSynced,
 		customhpasLister:   customhpaInformer.Lister(),
 		customhpasSynced:   customhpaInformer.Informer().HasSynced,
-		workqueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
+		workqueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "CustomHPAs"),
 		recorder:           recorder,
 	}
 
 	logger.Info("Setting up event handlers")
 	// Set up an event handler for when CustomHPA resources change
 	customhpaInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueFoo,
+		AddFunc: controller.enqueueCustomHPA,
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueFoo(new)
+			controller.enqueueCustomHPA(new)
 		},
 	})
 	// Set up an event handler for when Deployment resources change. This
@@ -302,7 +302,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 
 	// Finally, we update the status block of the CustomHPA resource to reflect the
 	// current state of the world
-	err = c.updateFooStatus(customhpa, deployment)
+	err = c.updateCustomHPAStatus(customhpa, deployment)
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	return nil
 }
 
-func (c *Controller) updateFooStatus(customhpa *customhpav1alpha1.CustomHPA, deployment *appsv1.Deployment) error {
+func (c *Controller) updateCustomHPAStatus(customhpa *customhpav1alpha1.CustomHPA, deployment *appsv1.Deployment) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -325,10 +325,10 @@ func (c *Controller) updateFooStatus(customhpa *customhpav1alpha1.CustomHPA, dep
 	return err
 }
 
-// enqueueFoo takes a CustomHPA resource and converts it into a namespace/name
+// enqueueCustomHPA takes a CustomHPA resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than CustomHPA.
-func (c *Controller) enqueueFoo(obj interface{}) {
+func (c *Controller) enqueueCustomHPA(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -374,7 +374,7 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		c.enqueueFoo(customhpa)
+		c.enqueueCustomHPA(customhpa)
 		return
 	}
 }
