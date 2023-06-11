@@ -6,6 +6,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -233,7 +234,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 // with the current status of the resource.
 func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
-	logger := klog.LoggerWithValues(klog.FromContext(ctx), "resourceName", key)
+	// logger := klog.LoggerWithValues(klog.FromContext(ctx), "resourceName", key)
 
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -254,58 +255,58 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	deploymentName := customhpa.Spec.DeploymentName
-	if deploymentName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
-		return nil
-	}
+	// deploymentName := customhpa.Spec.DeploymentName
+	// if deploymentName == "" {
+	// 	// We choose to absorb the error here as the worker would requeue the
+	// 	// resource otherwise. Instead, the next time the resource is updated
+	// 	// the resource will be queued again.
+	// 	utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
+	// 	return nil
+	// }
 
-	// Get the deployment with the name specified in CustomHPA.spec
-	deployment, err := c.deploymentsLister.Deployments(customhpa.Namespace).Get(deploymentName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Create(context.TODO(), newDeployment(customhpa), metav1.CreateOptions{})
-	}
+	// // Get the deployment with the name specified in CustomHPA.spec
+	// deployment, err := c.deploymentsLister.Deployments(customhpa.Namespace).Get(deploymentName)
+	// // If the resource doesn't exist, we'll create it
+	// if errors.IsNotFound(err) {
+	// 	deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Create(context.TODO(), newDeployment(customhpa), metav1.CreateOptions{})
+	// }
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
 	// attempt processing again later. This could have been caused by a
 	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
 	// If the Deployment is not controlled by this CustomHPA resource, we should log
 	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, customhpa) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(customhpa, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf("%s", msg)
-	}
+	// if !metav1.IsControlledBy(deployment, customhpa) {
+	// 	msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+	// 	c.recorder.Event(customhpa, corev1.EventTypeWarning, ErrResourceExists, msg)
+	// 	return fmt.Errorf("%s", msg)
+	// }
 
 	// If this number of the replicas on the CustomHPA resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
-	if customhpa.Spec.Replicas != nil && *customhpa.Spec.Replicas != *deployment.Spec.Replicas {
-		logger.V(4).Info("Update deployment resource", "currentReplicas", *customhpa.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
-		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Update(context.TODO(), newDeployment(customhpa), metav1.UpdateOptions{})
-	}
+	// if customhpa.Spec.Replicas != nil && *customhpa.Spec.Replicas != *deployment.Spec.Replicas {
+	// 	logger.V(4).Info("Update deployment resource", "currentReplicas", *customhpa.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
+	// 	deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Update(context.TODO(), newDeployment(customhpa), metav1.UpdateOptions{})
+	// }
 
 	// If an error occurs during Update, we'll requeue the item so we can
 	// attempt processing again later. This could have been caused by a
 	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Finally, we update the status block of the CustomHPA resource to reflect the
 	// current state of the world
-	err = c.updateCustomHPAStatus(customhpa, deployment)
-	if err != nil {
-		return err
-	}
+	// err = c.updateCustomHPAStatus(customhpa, deployment)
+	// if err != nil {
+	// 	return err
+	// }
 
 	c.recorder.Event(customhpa, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
@@ -316,7 +317,8 @@ func (c *Controller) updateCustomHPAStatus(customhpa *customhpav1alpha1.CustomHP
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	customhpaCopy := customhpa.DeepCopy()
-	customhpaCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+	// customhpaCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the CustomHPA resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
@@ -379,40 +381,23 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 }
 
-// newDeployment creates a new Deployment for a CustomHPA resource. It also sets
+// newHorizontalPodAutoscaler creates a new HorizontalPodAutoscaler for a CustomHPA resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the CustomHPA resource that 'owns' it.
-func newDeployment(customhpa *customhpav1alpha1.CustomHPA) *appsv1.Deployment {
-	labels := map[string]string{
-		"app":        "nginx",
-		"controller": customhpa.Name,
-	}
-	return &appsv1.Deployment{
+func newHorizontalPodAutoscaler(customhpa *customhpav1alpha1.CustomHPA) *autoscalingv2.HorizontalPodAutoscaler {
+	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      customhpa.Spec.DeploymentName,
 			Namespace: customhpa.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(customhpa, customhpav1alpha1.SchemeGroupVersion.WithKind("CustomHPA")),
 			},
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: customhpa.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
+		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			MinReplicas: customhpa.Spec.MinReplicas,
+			MaxReplicas: customhpa.Spec.MaxReplicas,
+			Metrics:     customhpa.Spec.Metrics,
+			Behavior:    customhpa.Spec.Behavior.DeepCopy(),
 		},
 	}
+
 }
