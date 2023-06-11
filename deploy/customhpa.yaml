@@ -1,0 +1,7 @@
+apiVersion: customhpa.k8s.io/v1alpha1
+kind: CustomHPA
+metadata:
+  name: custom-hpa
+spec:
+  deploymentName: custom-hpa
+  replicas: 1
