@@ -16,12 +16,13 @@ type CustomHPA struct {
 }
 
 type CustomHPAStatus struct {
-	Name string `json:"name"`
+	AvailableReplicas int32 `json:"availableReplicas"`
 }
 
 // CustomHPASpec is the spec for a CustomHPA resource
 type CustomHPASpec struct {
-	Name string `json:"name"`
+	DeploymentName string `json:"deploymentName"`
+	Replicas       *int32 `json:"replicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -20,7 +20,8 @@ package v1alpha1
 // CustomHPASpecApplyConfiguration represents an declarative configuration of the CustomHPASpec type for use
 // with apply.
 type CustomHPASpecApplyConfiguration struct {
-	Name *string `json:"name,omitempty"`
+	DeploymentName *string `json:"deploymentName,omitempty"`
+	Replicas       *int32  `json:"replicas,omitempty"`
 }
 
 // CustomHPASpecApplyConfiguration constructs an declarative configuration of the CustomHPASpec type for use with
@@ -29,10 +30,18 @@ func CustomHPASpec() *CustomHPASpecApplyConfiguration {
 	return &CustomHPASpecApplyConfiguration{}
 }
 
-// WithName sets the Name field in the declarative configuration to the given value
+// WithDeploymentName sets the DeploymentName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Name field is set to the value of the last call.
-func (b *CustomHPASpecApplyConfiguration) WithName(value string) *CustomHPASpecApplyConfiguration {
-	b.Name = &value
+// If called multiple times, the DeploymentName field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithDeploymentName(value string) *CustomHPASpecApplyConfiguration {
+	b.DeploymentName = &value
+	return b
+}
+
+// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Replicas field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithReplicas(value int32) *CustomHPASpecApplyConfiguration {
+	b.Replicas = &value
 	return b
 }

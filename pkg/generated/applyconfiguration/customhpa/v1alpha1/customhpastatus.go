@@ -20,7 +20,7 @@ package v1alpha1
 // CustomHPAStatusApplyConfiguration represents an declarative configuration of the CustomHPAStatus type for use
 // with apply.
 type CustomHPAStatusApplyConfiguration struct {
-	Name *string `json:"name,omitempty"`
+	AvailableReplicas *int32 `json:"availableReplicas,omitempty"`
 }
 
 // CustomHPAStatusApplyConfiguration constructs an declarative configuration of the CustomHPAStatus type for use with
@@ -29,10 +29,10 @@ func CustomHPAStatus() *CustomHPAStatusApplyConfiguration {
 	return &CustomHPAStatusApplyConfiguration{}
 }
 
-// WithName sets the Name field in the declarative configuration to the given value
+// WithAvailableReplicas sets the AvailableReplicas field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Name field is set to the value of the last call.
-func (b *CustomHPAStatusApplyConfiguration) WithName(value string) *CustomHPAStatusApplyConfiguration {
-	b.Name = &value
+// If called multiple times, the AvailableReplicas field is set to the value of the last call.
+func (b *CustomHPAStatusApplyConfiguration) WithAvailableReplicas(value int32) *CustomHPAStatusApplyConfiguration {
+	b.AvailableReplicas = &value
 	return b
 }
