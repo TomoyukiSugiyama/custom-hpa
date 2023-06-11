@@ -24,19 +24,28 @@ import (
 // CustomHPASpecApplyConfiguration represents an declarative configuration of the CustomHPASpec type for use
 // with apply.
 type CustomHPASpecApplyConfiguration struct {
-	MinReplicas         *int32                              `json:"minReplicas,omitempty"`
-	MinReplicasTraining *int32                              `json:"minReplicasTraining,omitempty"`
-	MaxReplicas         *int32                              `json:"maxReplicas,omitempty"`
-	MaxReplicasTraining *int32                              `json:"maxReplicasTraining,omitempty"`
-	ScaleTargetRef      *v2.CrossVersionObjectReference     `json:"scaleTargetRef,omitempty"`
-	Metrics             []v2.MetricSpec                     `json:"metrics,omitempty"`
-	Behavior            *v2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
+	HorizontalPodAutoscalerName *string                             `json:"horizontalPodAutoscalerName,omitempty"`
+	MinReplicas                 *int32                              `json:"minReplicas,omitempty"`
+	MinReplicasTraining         *int32                              `json:"minReplicasTraining,omitempty"`
+	MaxReplicas                 *int32                              `json:"maxReplicas,omitempty"`
+	MaxReplicasTraining         *int32                              `json:"maxReplicasTraining,omitempty"`
+	ScaleTargetRef              *v2.CrossVersionObjectReference     `json:"scaleTargetRef,omitempty"`
+	Metrics                     []v2.MetricSpec                     `json:"metrics,omitempty"`
+	Behavior                    *v2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 }
 
 // CustomHPASpecApplyConfiguration constructs an declarative configuration of the CustomHPASpec type for use with
 // apply.
 func CustomHPASpec() *CustomHPASpecApplyConfiguration {
 	return &CustomHPASpecApplyConfiguration{}
+}
+
+// WithHorizontalPodAutoscalerName sets the HorizontalPodAutoscalerName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HorizontalPodAutoscalerName field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithHorizontalPodAutoscalerName(value string) *CustomHPASpecApplyConfiguration {
+	b.HorizontalPodAutoscalerName = &value
+	return b
 }
 
 // WithMinReplicas sets the MinReplicas field in the declarative configuration to the given value

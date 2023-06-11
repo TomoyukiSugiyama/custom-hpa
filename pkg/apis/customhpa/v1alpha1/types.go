@@ -27,13 +27,14 @@ type CustomHPAStatus struct {
 
 // CustomHPASpec is the spec for a CustomHPA resource
 type CustomHPASpec struct {
-	MinReplicas         *int32                                         `json:"minReplicas"`
-	MinReplicasTraining *int32                                         `json:"minReplicasTraining"`
-	MaxReplicas         int32                                          `json:"maxReplicas"`
-	MaxReplicasTraining int32                                          `json:"maxReplicasTraining"`
-	ScaleTargetRef      autoscalingv2.CrossVersionObjectReference      `json:"scaleTargetRef"`
-	Metrics             []autoscalingv2.MetricSpec                     `json:"metrics"`
-	Behavior            *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior"`
+	HorizontalPodAutoscalerName string                                         `json:"horizontalPodAutoscalerName"`
+	MinReplicas                 *int32                                         `json:"minReplicas"`
+	MinReplicasTraining         *int32                                         `json:"minReplicasTraining"`
+	MaxReplicas                 int32                                          `json:"maxReplicas"`
+	MaxReplicasTraining         int32                                          `json:"maxReplicasTraining"`
+	ScaleTargetRef              autoscalingv2.CrossVersionObjectReference      `json:"scaleTargetRef"`
+	Metrics                     []autoscalingv2.MetricSpec                     `json:"metrics"`
+	Behavior                    *autoscalingv2.HorizontalPodAutoscalerBehavior `json:"behavior"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
