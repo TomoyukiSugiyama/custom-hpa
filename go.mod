@@ -8,7 +8,6 @@ require (
 	k8s.io/client-go v0.27.2
 	k8s.io/code-generator v0.27.2
 	k8s.io/klog/v2 v2.90.1
-	k8s.io/sample-controller v0.27.2
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3
 )
 
