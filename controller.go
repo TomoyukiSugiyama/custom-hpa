@@ -24,12 +24,12 @@ import (
 	samplev1alpha1 "custom-hpa/pkg/apis/customhpa/v1alpha1"
 	clientset "custom-hpa/pkg/generated/clientset/versioned"
 	samplescheme "custom-hpa/pkg/generated/clientset/versioned/scheme"
-	informers "custom-hpa/pkg/generated/informers/externalversions"
+	informers "custom-hpa/pkg/generated/informers/externalversions/customhpa/v1alpha1"
 
 	listers "custom-hpa/pkg/generated/listers/customhpa/v1alpha1"
 )
 
-const controllerAgentName = "sample-controller"
+const controllerAgentName = "custom-hpa-controller"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
@@ -75,7 +75,7 @@ func NewController(
 	kubeclientset kubernetes.Interface,
 	sampleclientset clientset.Interface,
 	deploymentInformer appsinformers.DeploymentInformer,
-	fooInformer informers.GenericInformer) *Controller {
+	fooInformer informers.CustomHPAInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
 	// Create event broadcaster
@@ -242,7 +242,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	}
 
 	// Get the Foo resource with this namespace/name
-	foo, err := c.foosLister.Foos(namespace).Get(name)
+	foo, err := c.foosLister.CustomHPAs(namespace).Get(name)
 	if err != nil {
 		// The Foo resource may no longer exist, in which case we stop
 		// processing.
@@ -368,7 +368,7 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		foo, err := c.foosLister.Foos(object.GetNamespace()).Get(ownerRef.Name)
+		foo, err := c.foosLister.CustomHPAs(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			logger.V(4).Info("Ignore orphaned object", "object", klog.KObj(object), "foo", ownerRef.Name)
 			return
@@ -382,7 +382,7 @@ func (c *Controller) handleObject(obj interface{}) {
 // newDeployment creates a new Deployment for a Foo resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the Foo resource that 'owns' it.
-func newDeployment(foo *samplev1alpha1.Foo) *appsv1.Deployment {
+func newDeployment(foo *samplev1alpha1.CustomHPA) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":        "nginx",
 		"controller": foo.Name,
