@@ -1,13 +1,19 @@
 # custom-hpa
 
 ```
-GOOS=linux go build -o ./custom-hpa .
-docker build -t custom-hpa .
+go build -o custom-hpa-controller .
+./custom-hpa-controller -kubeconfig=$HOME/.kube/config
 ```
 
 ## deploy
-```
+```bash
 kubectl create clusterrolebinding default-view --clusterrole=view --serviceaccount=default:default
-cd deploy
-kubectl apply -f deployment.yaml
+
+kubectl create -f deploy/crd.yaml
+kubectl create -f deploy/customhpa.yaml
+
+# delete
+kubectl delete -f deploy/customhpa.yaml
+kubectl delete -f deploy/crd.yaml
+
 ```
