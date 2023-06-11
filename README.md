@@ -12,10 +12,12 @@ go build -o custom-hpa-controller .
 
 ## deploy
 ```bash
+kubectl create -f deploy/deployment.yaml
 kubectl create -f deploy/crd.yaml
 kubectl create -f deploy/customhpa.yaml
 
 # delete
+kubectl delete -f deploy/deployment.yaml
 kubectl delete -f deploy/customhpa.yaml
 kubectl delete -f deploy/crd.yaml
 ```
