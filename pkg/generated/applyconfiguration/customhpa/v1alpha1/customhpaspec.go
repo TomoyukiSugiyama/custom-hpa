@@ -20,8 +20,11 @@ package v1alpha1
 // CustomHPASpecApplyConfiguration represents an declarative configuration of the CustomHPASpec type for use
 // with apply.
 type CustomHPASpecApplyConfiguration struct {
-	DeploymentName *string `json:"deploymentName,omitempty"`
-	Replicas       *int32  `json:"replicas,omitempty"`
+	MinReplicas         *int32                            `json:"minReplicas,omitempty"`
+	MinReplicasTraining *int32                            `json:"minReplicasTraining,omitempty"`
+	MaxReplicas         *int32                            `json:"maxReplicas,omitempty"`
+	MaxReplicasTraining *int32                            `json:"maxReplicasTraining,omitempty"`
+	ScaleTargetRef      *ScaleTargetRefApplyConfiguration `json:"scaleTargetRef,omitempty"`
 }
 
 // CustomHPASpecApplyConfiguration constructs an declarative configuration of the CustomHPASpec type for use with
@@ -30,18 +33,42 @@ func CustomHPASpec() *CustomHPASpecApplyConfiguration {
 	return &CustomHPASpecApplyConfiguration{}
 }
 
-// WithDeploymentName sets the DeploymentName field in the declarative configuration to the given value
+// WithMinReplicas sets the MinReplicas field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DeploymentName field is set to the value of the last call.
-func (b *CustomHPASpecApplyConfiguration) WithDeploymentName(value string) *CustomHPASpecApplyConfiguration {
-	b.DeploymentName = &value
+// If called multiple times, the MinReplicas field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithMinReplicas(value int32) *CustomHPASpecApplyConfiguration {
+	b.MinReplicas = &value
 	return b
 }
 
-// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// WithMinReplicasTraining sets the MinReplicasTraining field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Replicas field is set to the value of the last call.
-func (b *CustomHPASpecApplyConfiguration) WithReplicas(value int32) *CustomHPASpecApplyConfiguration {
-	b.Replicas = &value
+// If called multiple times, the MinReplicasTraining field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithMinReplicasTraining(value int32) *CustomHPASpecApplyConfiguration {
+	b.MinReplicasTraining = &value
+	return b
+}
+
+// WithMaxReplicas sets the MaxReplicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MaxReplicas field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithMaxReplicas(value int32) *CustomHPASpecApplyConfiguration {
+	b.MaxReplicas = &value
+	return b
+}
+
+// WithMaxReplicasTraining sets the MaxReplicasTraining field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MaxReplicasTraining field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithMaxReplicasTraining(value int32) *CustomHPASpecApplyConfiguration {
+	b.MaxReplicasTraining = &value
+	return b
+}
+
+// WithScaleTargetRef sets the ScaleTargetRef field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ScaleTargetRef field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithScaleTargetRef(value *ScaleTargetRefApplyConfiguration) *CustomHPASpecApplyConfiguration {
+	b.ScaleTargetRef = value
 	return b
 }

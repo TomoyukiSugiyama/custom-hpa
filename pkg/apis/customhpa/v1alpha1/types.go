@@ -16,13 +16,23 @@ type CustomHPA struct {
 }
 
 type CustomHPAStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+	CurrentReplicas int32 `json:"currentReplicas"`
+	DesiredReplicas int32 `json:"desiredReplicas"`
 }
 
 // CustomHPASpec is the spec for a CustomHPA resource
 type CustomHPASpec struct {
-	DeploymentName string `json:"deploymentName"`
-	Replicas       *int32 `json:"replicas"`
+	MinReplicas         int32          `json:"minReplicas"`
+	MinReplicasTraining int32          `json:"minReplicasTraining"`
+	MaxReplicas         int32          `json:"maxReplicas"`
+	MaxReplicasTraining int32          `json:"maxReplicasTraining"`
+	ScaleTargetRef      ScaleTargetRef `json:"scaleTargetRef"`
+}
+
+type ScaleTargetRef struct {
+	ApiVersion string `json:"apiVersion"`
+	Kind       string `json:"kind"`
+	Name       string `json:"name"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

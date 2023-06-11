@@ -35,6 +35,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &customhpav1alpha1.CustomHPASpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CustomHPAStatus"):
 		return &customhpav1alpha1.CustomHPAStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ScaleTargetRef"):
+		return &customhpav1alpha1.ScaleTargetRefApplyConfiguration{}
 
 	}
 	return nil

@@ -20,7 +20,8 @@ package v1alpha1
 // CustomHPAStatusApplyConfiguration represents an declarative configuration of the CustomHPAStatus type for use
 // with apply.
 type CustomHPAStatusApplyConfiguration struct {
-	AvailableReplicas *int32 `json:"availableReplicas,omitempty"`
+	CurrentReplicas *int32 `json:"currentReplicas,omitempty"`
+	DesiredReplicas *int32 `json:"desiredReplicas,omitempty"`
 }
 
 // CustomHPAStatusApplyConfiguration constructs an declarative configuration of the CustomHPAStatus type for use with
@@ -29,10 +30,18 @@ func CustomHPAStatus() *CustomHPAStatusApplyConfiguration {
 	return &CustomHPAStatusApplyConfiguration{}
 }
 
-// WithAvailableReplicas sets the AvailableReplicas field in the declarative configuration to the given value
+// WithCurrentReplicas sets the CurrentReplicas field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the AvailableReplicas field is set to the value of the last call.
-func (b *CustomHPAStatusApplyConfiguration) WithAvailableReplicas(value int32) *CustomHPAStatusApplyConfiguration {
-	b.AvailableReplicas = &value
+// If called multiple times, the CurrentReplicas field is set to the value of the last call.
+func (b *CustomHPAStatusApplyConfiguration) WithCurrentReplicas(value int32) *CustomHPAStatusApplyConfiguration {
+	b.CurrentReplicas = &value
+	return b
+}
+
+// WithDesiredReplicas sets the DesiredReplicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DesiredReplicas field is set to the value of the last call.
+func (b *CustomHPAStatusApplyConfiguration) WithDesiredReplicas(value int32) *CustomHPAStatusApplyConfiguration {
+	b.DesiredReplicas = &value
 	return b
 }
