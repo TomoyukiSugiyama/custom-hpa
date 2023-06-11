@@ -7,8 +7,6 @@ go build -o custom-hpa-controller .
 
 ## deploy
 ```bash
-kubectl create clusterrolebinding default-view --clusterrole=view --serviceaccount=default:default
-
 kubectl create -f deploy/crd.yaml
 kubectl create -f deploy/customhpa.yaml
 
