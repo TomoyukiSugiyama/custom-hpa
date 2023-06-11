@@ -17,17 +17,42 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v2 "k8s.io/api/autoscaling/v2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // CustomHPAStatusApplyConfiguration represents an declarative configuration of the CustomHPAStatus type for use
 // with apply.
 type CustomHPAStatusApplyConfiguration struct {
-	CurrentReplicas *int32 `json:"currentReplicas,omitempty"`
-	DesiredReplicas *int32 `json:"desiredReplicas,omitempty"`
+	ObservedGeneration *int64                                `json:"observedGeneration,omitempty"`
+	LastScaleTime      *v1.Time                              `json:"lastScaleTime,omitempty"`
+	CurrentReplicas    *int32                                `json:"currentReplicas,omitempty"`
+	DesiredReplicas    *int32                                `json:"desiredReplicas,omitempty"`
+	CurrentMetrics     []v2.MetricStatus                     `json:"currentMetrics,omitempty"`
+	Conditions         []v2.HorizontalPodAutoscalerCondition `json:"conditions,omitempty"`
 }
 
 // CustomHPAStatusApplyConfiguration constructs an declarative configuration of the CustomHPAStatus type for use with
 // apply.
 func CustomHPAStatus() *CustomHPAStatusApplyConfiguration {
 	return &CustomHPAStatusApplyConfiguration{}
+}
+
+// WithObservedGeneration sets the ObservedGeneration field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ObservedGeneration field is set to the value of the last call.
+func (b *CustomHPAStatusApplyConfiguration) WithObservedGeneration(value int64) *CustomHPAStatusApplyConfiguration {
+	b.ObservedGeneration = &value
+	return b
+}
+
+// WithLastScaleTime sets the LastScaleTime field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LastScaleTime field is set to the value of the last call.
+func (b *CustomHPAStatusApplyConfiguration) WithLastScaleTime(value v1.Time) *CustomHPAStatusApplyConfiguration {
+	b.LastScaleTime = &value
+	return b
 }
 
 // WithCurrentReplicas sets the CurrentReplicas field in the declarative configuration to the given value
@@ -43,5 +68,25 @@ func (b *CustomHPAStatusApplyConfiguration) WithCurrentReplicas(value int32) *Cu
 // If called multiple times, the DesiredReplicas field is set to the value of the last call.
 func (b *CustomHPAStatusApplyConfiguration) WithDesiredReplicas(value int32) *CustomHPAStatusApplyConfiguration {
 	b.DesiredReplicas = &value
+	return b
+}
+
+// WithCurrentMetrics adds the given value to the CurrentMetrics field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the CurrentMetrics field.
+func (b *CustomHPAStatusApplyConfiguration) WithCurrentMetrics(values ...v2.MetricStatus) *CustomHPAStatusApplyConfiguration {
+	for i := range values {
+		b.CurrentMetrics = append(b.CurrentMetrics, values[i])
+	}
+	return b
+}
+
+// WithConditions adds the given value to the Conditions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Conditions field.
+func (b *CustomHPAStatusApplyConfiguration) WithConditions(values ...v2.HorizontalPodAutoscalerCondition) *CustomHPAStatusApplyConfiguration {
+	for i := range values {
+		b.Conditions = append(b.Conditions, values[i])
+	}
 	return b
 }

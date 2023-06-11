@@ -17,14 +17,20 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v2 "k8s.io/api/autoscaling/v2"
+)
+
 // CustomHPASpecApplyConfiguration represents an declarative configuration of the CustomHPASpec type for use
 // with apply.
 type CustomHPASpecApplyConfiguration struct {
-	MinReplicas         *int32                            `json:"minReplicas,omitempty"`
-	MinReplicasTraining *int32                            `json:"minReplicasTraining,omitempty"`
-	MaxReplicas         *int32                            `json:"maxReplicas,omitempty"`
-	MaxReplicasTraining *int32                            `json:"maxReplicasTraining,omitempty"`
-	ScaleTargetRef      *ScaleTargetRefApplyConfiguration `json:"scaleTargetRef,omitempty"`
+	MinReplicas         *int32                              `json:"minReplicas,omitempty"`
+	MinReplicasTraining *int32                              `json:"minReplicasTraining,omitempty"`
+	MaxReplicas         *int32                              `json:"maxReplicas,omitempty"`
+	MaxReplicasTraining *int32                              `json:"maxReplicasTraining,omitempty"`
+	ScaleTargetRef      *v2.CrossVersionObjectReference     `json:"scaleTargetRef,omitempty"`
+	Metrics             []v2.MetricSpec                     `json:"metrics,omitempty"`
+	Behavior            *v2.HorizontalPodAutoscalerBehavior `json:"behavior,omitempty"`
 }
 
 // CustomHPASpecApplyConfiguration constructs an declarative configuration of the CustomHPASpec type for use with
@@ -68,7 +74,25 @@ func (b *CustomHPASpecApplyConfiguration) WithMaxReplicasTraining(value int32) *
 // WithScaleTargetRef sets the ScaleTargetRef field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ScaleTargetRef field is set to the value of the last call.
-func (b *CustomHPASpecApplyConfiguration) WithScaleTargetRef(value *ScaleTargetRefApplyConfiguration) *CustomHPASpecApplyConfiguration {
-	b.ScaleTargetRef = value
+func (b *CustomHPASpecApplyConfiguration) WithScaleTargetRef(value v2.CrossVersionObjectReference) *CustomHPASpecApplyConfiguration {
+	b.ScaleTargetRef = &value
+	return b
+}
+
+// WithMetrics adds the given value to the Metrics field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Metrics field.
+func (b *CustomHPASpecApplyConfiguration) WithMetrics(values ...v2.MetricSpec) *CustomHPASpecApplyConfiguration {
+	for i := range values {
+		b.Metrics = append(b.Metrics, values[i])
+	}
+	return b
+}
+
+// WithBehavior sets the Behavior field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Behavior field is set to the value of the last call.
+func (b *CustomHPASpecApplyConfiguration) WithBehavior(value v2.HorizontalPodAutoscalerBehavior) *CustomHPASpecApplyConfiguration {
+	b.Behavior = &value
 	return b
 }
