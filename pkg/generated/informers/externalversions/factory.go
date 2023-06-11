@@ -242,9 +242,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	Customhpacontroller() customhpa.Interface
+	Customhpa() customhpa.Interface
 }
 
-func (f *sharedInformerFactory) Customhpacontroller() customhpa.Interface {
+func (f *sharedInformerFactory) Customhpa() customhpa.Interface {
 	return customhpa.New(f, f.namespace, f.tweakListOptions)
 }

@@ -50,7 +50,7 @@ func main() {
 
 	controller := NewController(ctx, kubeClient, exampleClient,
 		kubeInformerFactory.Apps().V1().Deployments(),
-		exampleInformerFactory.Customhpacontroller().V1alpha1().CustomHPAs())
+		exampleInformerFactory.Customhpa().V1alpha1().CustomHPAs())
 
 	// controller := NewController(ctx, kubeClient, exampleClient,
 	// 	kubeInformerFactory.Apps().V1().Deployments(),

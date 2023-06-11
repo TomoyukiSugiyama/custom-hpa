@@ -19,8 +19,8 @@ package fake
 
 import (
 	clientset "custom-hpa/pkg/generated/clientset/versioned"
-	customhpacontrollerv1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1"
-	fakecustomhpacontrollerv1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1/fake"
+	customhpav1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1"
+	fakecustomhpav1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -79,7 +79,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// CustomhpacontrollerV1alpha1 retrieves the CustomhpacontrollerV1alpha1Client
-func (c *Clientset) CustomhpacontrollerV1alpha1() customhpacontrollerv1alpha1.CustomhpacontrollerV1alpha1Interface {
-	return &fakecustomhpacontrollerv1alpha1.FakeCustomhpacontrollerV1alpha1{Fake: &c.Fake}
+// CustomhpaV1alpha1 retrieves the CustomhpaV1alpha1Client
+func (c *Clientset) CustomhpaV1alpha1() customhpav1alpha1.CustomhpaV1alpha1Interface {
+	return &fakecustomhpav1alpha1.FakeCustomhpaV1alpha1{Fake: &c.Fake}
 }

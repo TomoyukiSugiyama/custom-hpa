@@ -28,7 +28,7 @@ import (
 // apply configuration type exists for the given GroupVersionKind.
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
-	// Group=customhpacontroller.k8s.io, Version=v1alpha1
+	// Group=customhpa.k8s.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithKind("CustomHPA"):
 		return &customhpav1alpha1.CustomHPAApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CustomHPASpec"):

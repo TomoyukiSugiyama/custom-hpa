@@ -18,7 +18,7 @@ limitations under the License.
 package versioned
 
 import (
-	customhpacontrollerv1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1"
+	customhpav1alpha1 "custom-hpa/pkg/generated/clientset/versioned/typed/customhpa/v1alpha1"
 	"fmt"
 	"net/http"
 
@@ -29,18 +29,18 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	CustomhpacontrollerV1alpha1() customhpacontrollerv1alpha1.CustomhpacontrollerV1alpha1Interface
+	CustomhpaV1alpha1() customhpav1alpha1.CustomhpaV1alpha1Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	customhpacontrollerV1alpha1 *customhpacontrollerv1alpha1.CustomhpacontrollerV1alpha1Client
+	customhpaV1alpha1 *customhpav1alpha1.CustomhpaV1alpha1Client
 }
 
-// CustomhpacontrollerV1alpha1 retrieves the CustomhpacontrollerV1alpha1Client
-func (c *Clientset) CustomhpacontrollerV1alpha1() customhpacontrollerv1alpha1.CustomhpacontrollerV1alpha1Interface {
-	return c.customhpacontrollerV1alpha1
+// CustomhpaV1alpha1 retrieves the CustomhpaV1alpha1Client
+func (c *Clientset) CustomhpaV1alpha1() customhpav1alpha1.CustomhpaV1alpha1Interface {
+	return c.customhpaV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -87,7 +87,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.customhpacontrollerV1alpha1, err = customhpacontrollerv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.customhpaV1alpha1, err = customhpav1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.customhpacontrollerV1alpha1 = customhpacontrollerv1alpha1.New(c)
+	cs.customhpaV1alpha1 = customhpav1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

@@ -25,24 +25,24 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type CustomhpacontrollerV1alpha1Interface interface {
+type CustomhpaV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CustomHPAsGetter
 }
 
-// CustomhpacontrollerV1alpha1Client is used to interact with features provided by the customhpacontroller.k8s.io group.
-type CustomhpacontrollerV1alpha1Client struct {
+// CustomhpaV1alpha1Client is used to interact with features provided by the customhpa.k8s.io group.
+type CustomhpaV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *CustomhpacontrollerV1alpha1Client) CustomHPAs(namespace string) CustomHPAInterface {
+func (c *CustomhpaV1alpha1Client) CustomHPAs(namespace string) CustomHPAInterface {
 	return newCustomHPAs(c, namespace)
 }
 
-// NewForConfig creates a new CustomhpacontrollerV1alpha1Client for the given config.
+// NewForConfig creates a new CustomhpaV1alpha1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*CustomhpacontrollerV1alpha1Client, error) {
+func NewForConfig(c *rest.Config) (*CustomhpaV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -54,9 +54,9 @@ func NewForConfig(c *rest.Config) (*CustomhpacontrollerV1alpha1Client, error) {
 	return NewForConfigAndClient(&config, httpClient)
 }
 
-// NewForConfigAndClient creates a new CustomhpacontrollerV1alpha1Client for the given config and http client.
+// NewForConfigAndClient creates a new CustomhpaV1alpha1Client for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
-func NewForConfigAndClient(c *rest.Config, h *http.Client) (*CustomhpacontrollerV1alpha1Client, error) {
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*CustomhpaV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -65,12 +65,12 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*Customhpacontroller
 	if err != nil {
 		return nil, err
 	}
-	return &CustomhpacontrollerV1alpha1Client{client}, nil
+	return &CustomhpaV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new CustomhpacontrollerV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new CustomhpaV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *CustomhpacontrollerV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *CustomhpaV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -78,9 +78,9 @@ func NewForConfigOrDie(c *rest.Config) *CustomhpacontrollerV1alpha1Client {
 	return client
 }
 
-// New creates a new CustomhpacontrollerV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *CustomhpacontrollerV1alpha1Client {
-	return &CustomhpacontrollerV1alpha1Client{c}
+// New creates a new CustomhpaV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *CustomhpaV1alpha1Client {
+	return &CustomhpaV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -98,7 +98,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *CustomhpacontrollerV1alpha1Client) RESTClient() rest.Interface {
+func (c *CustomhpaV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

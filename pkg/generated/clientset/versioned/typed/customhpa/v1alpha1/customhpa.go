@@ -61,7 +61,7 @@ type customHPAs struct {
 }
 
 // newCustomHPAs returns a CustomHPAs
-func newCustomHPAs(c *CustomhpacontrollerV1alpha1Client, namespace string) *customHPAs {
+func newCustomHPAs(c *CustomhpaV1alpha1Client, namespace string) *customHPAs {
 	return &customHPAs{
 		client: c.RESTClient(),
 		ns:     namespace,

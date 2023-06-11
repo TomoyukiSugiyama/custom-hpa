@@ -18,7 +18,7 @@ limitations under the License.
 package scheme
 
 import (
-	customhpacontrollerv1alpha1 "custom-hpa/pkg/apis/customhpa/v1alpha1"
+	customhpav1alpha1 "custom-hpa/pkg/apis/customhpa/v1alpha1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -31,7 +31,7 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
-	customhpacontrollerv1alpha1.AddToScheme,
+	customhpav1alpha1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

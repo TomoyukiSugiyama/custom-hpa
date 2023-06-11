@@ -39,7 +39,7 @@ func CustomHPA(name, namespace string) *CustomHPAApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("CustomHPA")
-	b.WithAPIVersion("customhpacontroller.k8s.io/v1alpha1")
+	b.WithAPIVersion("customhpa.k8s.io/v1alpha1")
 	return b
 }
 

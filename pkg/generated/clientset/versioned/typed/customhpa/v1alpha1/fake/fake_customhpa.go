@@ -33,7 +33,7 @@ import (
 
 // FakeCustomHPAs implements CustomHPAInterface
 type FakeCustomHPAs struct {
-	Fake *FakeCustomhpacontrollerV1alpha1
+	Fake *FakeCustomhpaV1alpha1
 	ns   string
 }
 
