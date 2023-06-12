@@ -35,11 +35,11 @@ const (
 	// SuccessSynced is used as part of the Event 'reason' when a CustomHPA is synced
 	SuccessSynced = "Synced"
 	// ErrResourceExists is used as part of the Event 'reason' when a CustomHPA fails
-	// to sync due to a Deployment of the same name already existing.
+	// to sync due to a HolizontalPodAutoscaler of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 
 	// MessageResourceExists is the message used for Events when a resource
-	// fails to sync due to a Deployment already existing
+	// fails to sync due to a HolizontalPodAutoscaler already existing
 	MessageResourceExists = "Resource %q already exists and is not managed by CustomHPA"
 	// MessageResourceSynced is the message used for an Event fired when a CustomHPA
 	// is synced successfully
@@ -108,11 +108,11 @@ func NewController(
 			controller.enqueueCustomHPA(new)
 		},
 	})
-	// Set up an event handler for when Deployment resources change. This
-	// handler will lookup the owner of the given Deployment, and if it is
+	// Set up an event handler for when HolizontalPodAutoscaler resources change. This
+	// handler will lookup the owner of the given HolizontalPodAutoscaler, and if it is
 	// owned by a CustomHPA resource then the handler will enqueue that CustomHPA resource for
 	// processing. This way, we don't need to implement custom logic for
-	// handling Deployment resources. More info on this pattern:
+	// handling HolizontalPodAutoscaler resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
 	holizontalPodAutoscalerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
@@ -120,8 +120,8 @@ func NewController(
 			newDepl := new.(*autoscalingv2.HorizontalPodAutoscaler)
 			oldDepl := old.(*autoscalingv2.HorizontalPodAutoscaler)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
-				// Two different versions of the same Deployment will always have different RVs.
+				// Periodic resync will send update events for all known HolizontalPodAutoscalers.
+				// Two different versions of the same HolizontalPodAutoscaler will always have different RVs.
 				return
 			}
 			controller.handleObject(new)
@@ -277,7 +277,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	// If the Deployment is not controlled by this CustomHPA resource, we should log
+	// If the HolizontalPodAutoscaler is not controlled by this CustomHPA resource, we should log
 	// a warning to the event recorder and return error msg.
 	if !metav1.IsControlledBy(horizontalPodAutoscaler, customhpa) {
 		msg := fmt.Sprintf(MessageResourceExists, horizontalPodAutoscaler.Name)
@@ -286,8 +286,8 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	}
 
 	// If this number of the replicas on the CustomHPA resource is specified, and the
-	// number does not equal the current desired replicas on the Deployment, we
-	// should update the Deployment resource.
+	// number does not equal the current desired replicas on the HolizontalPodAutoscaler, we
+	// should update the HolizontalPodAutoscaler resource.
 	if customhpa.Spec.MinReplicas != nil && *customhpa.Spec.MinReplicas != *horizontalPodAutoscaler.Spec.MinReplicas {
 		logger.V(4).Info("Update horizontalPodAutoscaler resource", "currentReplicas", *customhpa.Spec.MinReplicas, "desiredReplicas", *horizontalPodAutoscaler.Spec.MinReplicas)
 		horizontalPodAutoscaler, err = c.kubeclientset.AutoscalingV2().HorizontalPodAutoscalers(customhpa.Namespace).Update(context.TODO(), newHorizontalPodAutoscaler(customhpa), metav1.UpdateOptions{})
