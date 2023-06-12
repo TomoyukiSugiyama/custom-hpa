@@ -21,4 +21,4 @@ spec:
         name: memory_usage_bytes
       target:
         type: Value
-        value: 8368128
+        averageValue: 8368128

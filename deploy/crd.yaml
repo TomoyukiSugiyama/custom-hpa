@@ -61,38 +61,8 @@ spec:
                             properties:
                               type:
                                 type: string
-                              value:
+                              averageValue:
                                 type: integer
-
-                # metrics:
-                #   type: array
-                #   items:
-                #     type: object
-                #     properties:
-                #       type:
-                #         type: string
-                #       pods:
-                #         type: array
-                #         items:
-                #           type: object
-                #           properties:
-                #             metric:
-                #               type: array
-                #               items:
-                #                 type: object
-                #                 properties:
-                #                   name:
-                #                     type: string
-                #             target:
-                #               type: array
-                #               items:
-                #                 type: object
-                #                 properties:
-                #                   type:
-                #                     type: string
-                #                   value:
-                #                     type: string
-
 
             status:
               type: object
