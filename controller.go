@@ -386,16 +386,18 @@ func (c *Controller) handleObject(obj interface{}) {
 func newHorizontalPodAutoscaler(customhpa *customhpav1alpha1.CustomHPA) *autoscalingv2.HorizontalPodAutoscaler {
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
+			Name:      customhpa.Spec.HorizontalPodAutoscalerName,
 			Namespace: customhpa.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(customhpa, customhpav1alpha1.SchemeGroupVersion.WithKind("CustomHPA")),
 			},
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
-			MinReplicas: customhpa.Spec.MinReplicas,
-			MaxReplicas: customhpa.Spec.MaxReplicas,
-			Metrics:     customhpa.Spec.Metrics,
-			Behavior:    customhpa.Spec.Behavior.DeepCopy(),
+			MinReplicas:    customhpa.Spec.MinReplicas,
+			MaxReplicas:    customhpa.Spec.MaxReplicas,
+			ScaleTargetRef: customhpa.Spec.ScaleTargetRef,
+			Metrics:        customhpa.Spec.Metrics,
+			Behavior:       customhpa.Spec.Behavior.DeepCopy(),
 		},
 	}
 
