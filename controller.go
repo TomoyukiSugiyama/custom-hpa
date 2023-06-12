@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	appsinformers "k8s.io/client-go/informers/apps/v1"
+	autoscalinglinformersv2 "k8s.io/client-go/informers/autoscaling/v2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	appslisters "k8s.io/client-go/listers/apps/v1"
+	autoscalinglistersv2 "k8s.io/client-go/listers/autoscaling/v2"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -51,12 +51,11 @@ type Controller struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 	// customhpaclientset is a clientset for our own API group
-	customhpaclientset clientset.Interface
-
-	deploymentsLister appslisters.DeploymentLister
-	deploymentsSynced cache.InformerSynced
-	customhpasLister  listers.CustomHPALister
-	customhpasSynced  cache.InformerSynced
+	customhpaclientset            clientset.Interface
+	holizontalPodAutoscalerLister autoscalinglistersv2.HorizontalPodAutoscalerLister
+	holizontalPodAutoscalerSynced cache.InformerSynced
+	customhpasLister              listers.CustomHPALister
+	customhpasSynced              cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -74,7 +73,8 @@ func NewController(
 	ctx context.Context,
 	kubeclientset kubernetes.Interface,
 	customhpaclientset clientset.Interface,
-	deploymentInformer appsinformers.DeploymentInformer,
+	holizontalPodAutoscalerInformer autoscalinglinformersv2.HorizontalPodAutoscalerInformer,
+
 	customhpaInformer informers.CustomHPAInformer) *Controller {
 	logger := klog.FromContext(ctx)
 
@@ -90,22 +90,22 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeclientset:      kubeclientset,
-		customhpaclientset: customhpaclientset,
-		deploymentsLister:  deploymentInformer.Lister(),
-		deploymentsSynced:  deploymentInformer.Informer().HasSynced,
-		customhpasLister:   customhpaInformer.Lister(),
-		customhpasSynced:   customhpaInformer.Informer().HasSynced,
-		workqueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "Foos"),
-		recorder:           recorder,
+		kubeclientset:                 kubeclientset,
+		customhpaclientset:            customhpaclientset,
+		holizontalPodAutoscalerLister: holizontalPodAutoscalerInformer.Lister(),
+		holizontalPodAutoscalerSynced: holizontalPodAutoscalerInformer.Informer().HasSynced,
+		customhpasLister:              customhpaInformer.Lister(),
+		customhpasSynced:              customhpaInformer.Informer().HasSynced,
+		workqueue:                     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "CustomHPAs"),
+		recorder:                      recorder,
 	}
 
 	logger.Info("Setting up event handlers")
 	// Set up an event handler for when CustomHPA resources change
 	customhpaInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueFoo,
+		AddFunc: controller.enqueueCustomHPA,
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueFoo(new)
+			controller.enqueueCustomHPA(new)
 		},
 	})
 	// Set up an event handler for when Deployment resources change. This
@@ -114,11 +114,11 @@ func NewController(
 	// processing. This way, we don't need to implement custom logic for
 	// handling Deployment resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	holizontalPodAutoscalerInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
 		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.Deployment)
-			oldDepl := old.(*appsv1.Deployment)
+			newDepl := new.(*autoscalingv2.HorizontalPodAutoscaler)
+			oldDepl := old.(*autoscalingv2.HorizontalPodAutoscaler)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same Deployment will always have different RVs.
@@ -147,7 +147,7 @@ func (c *Controller) Run(ctx context.Context, workers int) error {
 	// Wait for the caches to be synced before starting workers
 	logger.Info("Waiting for informer caches to sync")
 
-	if ok := cache.WaitForCacheSync(ctx.Done(), c.deploymentsSynced, c.customhpasSynced); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), c.holizontalPodAutoscalerSynced, c.customhpasSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -254,20 +254,20 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	deploymentName := customhpa.Spec.DeploymentName
-	if deploymentName == "" {
+	horizontalPodAutoscalerName := customhpa.Spec.HorizontalPodAutoscalerName
+	if horizontalPodAutoscalerName == "" {
 		// We choose to absorb the error here as the worker would requeue the
 		// resource otherwise. Instead, the next time the resource is updated
 		// the resource will be queued again.
-		utilruntime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
+		utilruntime.HandleError(fmt.Errorf("%s: holizontalPodAutoscaler name must be specified", key))
 		return nil
 	}
 
-	// Get the deployment with the name specified in CustomHPA.spec
-	deployment, err := c.deploymentsLister.Deployments(customhpa.Namespace).Get(deploymentName)
+	// Get the horizontalPodAutoscaler with the name specified in CustomHPA.spec
+	horizontalPodAutoscaler, err := c.holizontalPodAutoscalerLister.HorizontalPodAutoscalers(customhpa.Namespace).Get(horizontalPodAutoscalerName)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Create(context.TODO(), newDeployment(customhpa), metav1.CreateOptions{})
+		horizontalPodAutoscaler, err = c.kubeclientset.AutoscalingV2().HorizontalPodAutoscalers(customhpa.Namespace).Create(context.TODO(), newHorizontalPodAutoscaler(customhpa), metav1.CreateOptions{})
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -279,8 +279,8 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 
 	// If the Deployment is not controlled by this CustomHPA resource, we should log
 	// a warning to the event recorder and return error msg.
-	if !metav1.IsControlledBy(deployment, customhpa) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
+	if !metav1.IsControlledBy(horizontalPodAutoscaler, customhpa) {
+		msg := fmt.Sprintf(MessageResourceExists, horizontalPodAutoscaler.Name)
 		c.recorder.Event(customhpa, corev1.EventTypeWarning, ErrResourceExists, msg)
 		return fmt.Errorf("%s", msg)
 	}
@@ -288,9 +288,9 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	// If this number of the replicas on the CustomHPA resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
-	if customhpa.Spec.Replicas != nil && *customhpa.Spec.Replicas != *deployment.Spec.Replicas {
-		logger.V(4).Info("Update deployment resource", "currentReplicas", *customhpa.Spec.Replicas, "desiredReplicas", *deployment.Spec.Replicas)
-		deployment, err = c.kubeclientset.AppsV1().Deployments(customhpa.Namespace).Update(context.TODO(), newDeployment(customhpa), metav1.UpdateOptions{})
+	if customhpa.Spec.MinReplicas != nil && *customhpa.Spec.MinReplicas != *horizontalPodAutoscaler.Spec.MinReplicas {
+		logger.V(4).Info("Update horizontalPodAutoscaler resource", "currentReplicas", *customhpa.Spec.MinReplicas, "desiredReplicas", *horizontalPodAutoscaler.Spec.MinReplicas)
+		horizontalPodAutoscaler, err = c.kubeclientset.AutoscalingV2().HorizontalPodAutoscalers(customhpa.Namespace).Update(context.TODO(), newHorizontalPodAutoscaler(customhpa), metav1.UpdateOptions{})
 	}
 
 	// If an error occurs during Update, we'll requeue the item so we can
@@ -302,7 +302,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 
 	// Finally, we update the status block of the CustomHPA resource to reflect the
 	// current state of the world
-	err = c.updateFooStatus(customhpa, deployment)
+	err = c.updateCustomHPAStatus(customhpa)
 	if err != nil {
 		return err
 	}
@@ -311,12 +311,13 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	return nil
 }
 
-func (c *Controller) updateFooStatus(customhpa *customhpav1alpha1.CustomHPA, deployment *appsv1.Deployment) error {
+func (c *Controller) updateCustomHPAStatus(customhpa *customhpav1alpha1.CustomHPA) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	customhpaCopy := customhpa.DeepCopy()
-	customhpaCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+	// customhpaCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the CustomHPA resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
@@ -325,10 +326,10 @@ func (c *Controller) updateFooStatus(customhpa *customhpav1alpha1.CustomHPA, dep
 	return err
 }
 
-// enqueueFoo takes a CustomHPA resource and converts it into a namespace/name
+// enqueueCustomHPA takes a CustomHPA resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than CustomHPA.
-func (c *Controller) enqueueFoo(obj interface{}) {
+func (c *Controller) enqueueCustomHPA(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -374,45 +375,30 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		c.enqueueFoo(customhpa)
+		c.enqueueCustomHPA(customhpa)
 		return
 	}
 }
 
-// newDeployment creates a new Deployment for a CustomHPA resource. It also sets
+// newHorizontalPodAutoscaler creates a new HorizontalPodAutoscaler for a CustomHPA resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the CustomHPA resource that 'owns' it.
-func newDeployment(customhpa *customhpav1alpha1.CustomHPA) *appsv1.Deployment {
-	labels := map[string]string{
-		"app":        "nginx",
-		"controller": customhpa.Name,
-	}
-	return &appsv1.Deployment{
+func newHorizontalPodAutoscaler(customhpa *customhpav1alpha1.CustomHPA) *autoscalingv2.HorizontalPodAutoscaler {
+	return &autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      customhpa.Spec.DeploymentName,
+			Name:      customhpa.Spec.HorizontalPodAutoscalerName,
 			Namespace: customhpa.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(customhpa, customhpav1alpha1.SchemeGroupVersion.WithKind("CustomHPA")),
 			},
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: customhpa.Spec.Replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
+		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+			MinReplicas:    customhpa.Spec.MinReplicas,
+			MaxReplicas:    customhpa.Spec.MaxReplicas,
+			ScaleTargetRef: customhpa.Spec.ScaleTargetRef,
+			Metrics:        customhpa.Spec.Metrics,
+			Behavior:       customhpa.Spec.Behavior.DeepCopy(),
 		},
 	}
+
 }

@@ -3,5 +3,22 @@ kind: CustomHPA
 metadata:
   name: custom-hpa
 spec:
-  deploymentName: custom-hpa
-  replicas: 1
+  horizontalPodAutoscalerName: custom-hpa
+  scaleTargetRef:
+    # point the HPA at the sample application
+    # you created above
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-deployment
+  minReplicas: 2
+  maxReplicas: 4
+  minReplicasTraining: 5
+  maxReplicasTraining: 10
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: memory_usage_bytes
+      target:
+        type: Value
+        averageValue: 8368128
